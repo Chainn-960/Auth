@@ -1,5 +1,7 @@
 // Signin.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { registerUser } from '../api';
 
 const Signin = () => {
   const [firstName, setFirstName] = useState('');
@@ -7,18 +9,24 @@ const Signin = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
-  const [email , setEmail] = useState('');
+  const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess('');
 
-    if (!username || !password) {
-      setError('Username and password are required.');
+    if (!username || !password || !email) {
+      setError('Username, email and password are required.');
+      return;
+    }
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email)) {
+      setError('Please enter a valid email address.');
       return;
     }
     if (password.length < 4) {
@@ -31,23 +39,18 @@ const Signin = () => {
     }
 
     setLoading(true);
-    // Save registered user locally (in localStorage)
-    const registered = {
-      username: username.trim(),
-      password,
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim()
-      
-    };
     try {
-      localStorage.setItem('registeredUser', JSON.stringify(registered));
-      setSuccess('Account created. Redirecting to login...');
-      setTimeout(() => {
-        window.location.href = '/login';
-      }, 1200);
+      const data = await registerUser({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        username: username.trim(),
+        email: email.trim(),
+        password
+      });
+      setSuccess(data.message || 'Account created. Redirecting to login...');
+      setTimeout(() => navigate('/login'), 1200);
     } catch (err) {
-      setError('Could not save account locally.');
+      setError(err.message || 'Could not create account. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -74,6 +77,17 @@ const Signin = () => {
         <div className="form-group">
           <label htmlFor="username">Username</label>
           <input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
         </div>
 
         <div className="form-group">

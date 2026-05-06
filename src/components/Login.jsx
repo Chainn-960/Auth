@@ -2,6 +2,7 @@
 // Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { loginUser } from '../api';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -15,50 +16,27 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setSuccess('');
 
+    if (!username || !password) {
+      setError('Username and password are required.');
+      return;
+    }
+
+    setLoading(true);
     try {
-      // Check for a locally registered user first
-      const registered = localStorage.getItem('registeredUser');
-      if (registered) {
-        const parsed = JSON.parse(registered);
-        if (username === parsed.username && password === parsed.password) {
-          const userObj = {
-            username: parsed.username,
-            firstName: parsed.firstName || parsed.username,
-            lastName: parsed.lastName || ''
-          };
-          setSuccess(`Welcome ${userObj.firstName}! Redirecting...`);
-            sessionStorage.setItem('user', JSON.stringify(userObj));
-            setTimeout(() => navigate('/success'), 1000);
-          setLoading(false);
-          return;
-        }
-        setError('Credentials do not match the registered account.');
-        setLoading(false);
-        return;
-      }
-
-      // Fallback: remote dummy auth
-      const response = await fetch('http://localhost:8082/products', {
-        method: 'get',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password, expiresInMins: 30 }),
-        credentials: 'include'
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        setSuccess(`Welcome ${data.firstName}! Redirecting...`);
-        sessionStorage.setItem('user', JSON.stringify(data));
-        setTimeout(() => navigate('/success'), 1200);
-      } else {
-        setError(data.message || 'Invalid credentials');
-      }
+      const data = await loginUser({ username, password });
+      const userObj = {
+        username: data.username || username,
+        firstName: data.firstName || data.username || username,
+        lastName: data.lastName || ''
+      };
+      setSuccess(`Welcome ${userObj.firstName}! Redirecting...`);
+      sessionStorage.setItem('user', JSON.stringify(userObj));
+      setTimeout(() => navigate('/success'), 1200);
     } catch (err) {
-      setError('Network error. Please try again.');
+      setError(err.message || 'Invalid credentials');
     } finally {
       setLoading(false);
     }
