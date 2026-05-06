@@ -1,0 +1,19 @@
+/* Signin.css - reuse Login styles but allow small variations */
+@import './Login.css';
+
+* {
+  margin: 0px;
+  
+  padding: 0px;
+  box-sizing: border-box;
+}
+.login-form .form-group input:focus {
+  border-color: #6c5ce7;
+  box-shadow: 0 0 0 4px rgba(108,92,231,0.08);
+
+}
+.login-form{
+    width: 110%;
+    padding: 2rem;
+}
+
